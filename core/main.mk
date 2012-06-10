@@ -121,7 +121,7 @@ java_version :=
 endif
 ifeq ($(strip $(java_version)),)
 $(info ************************************************************)
-$(info You are attempting to build with the incorrect version)
+$(info You are attempting to build with an unsupported version)
 $(info of java.)
 $(info $(space))
 $(info Your version is: $(shell java -version 2>&1 | head -n 1).)
@@ -130,7 +130,6 @@ $(info $(space))
 $(info Please follow the machine setup instructions at)
 $(info $(space)$(space)$(space)$(space)http://source.android.com/source/download.html)
 $(info ************************************************************)
-$(error stop)
 endif
 
 # Check for the correct version of javac
