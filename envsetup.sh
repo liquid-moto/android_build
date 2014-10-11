@@ -144,7 +144,6 @@ function setpaths()
     export TARGET_GCC_VERSION_AND=$targetgccversionand
 
     # The gcc toolchain does not exists for windows/cygwin. In this case, do not reference it.
-    if [ "$LINARO_GCC_VERSION" = "4.8" ]; then
     export ANDROID_EABI_TOOLCHAIN=
     local ARCH=$(get_build_var TARGET_ARCH)
     case $ARCH in
@@ -159,22 +158,6 @@ function setpaths()
             toolchaindir=xxxxxxxxx
             ;;
     esac
-    else
-    export ANDROID_EABI_TOOLCHAIN=
-    local ARCH=$(get_build_var TARGET_ARCH)
-    case $ARCH in
-        x86) toolchaindir=x86/i686-linux-android-$targetgccversionand/bin
-            ;;
-        arm) toolchaindir=arm/arm-linux-androideabi-4.10/bin
-            ;;
-        mips) toolchaindir=mips/mipsel-linux-android-$targetgccversionand/bin
-            ;;
-        *)
-            echo "Can't find toolchain for unknown architecture: $ARCH"
-            toolchaindir=xxxxxxxxx
-            ;;
-    esac
-    fi
     if [ -d "$gccprebuiltdir/$toolchaindir" ]; then
         export ANDROID_EABI_TOOLCHAIN=$gccprebuiltdir/$toolchaindir
     fi
@@ -182,11 +165,7 @@ function setpaths()
     unset ARM_EABI_TOOLCHAIN ARM_EABI_TOOLCHAIN_PATH
     case $ARCH in
         arm)
-    if [ "$LINARO_GCC_VERSION" = "4.8" ]; then
             toolchaindir=arm/arm-eabi-$targetgccversionarm/bin
-    else    
-            toolchaindir=arm/arm-eabi-LK/bin
-    fi
             if [ -d "$gccprebuiltdir/$toolchaindir" ]; then
                  export ARM_EABI_TOOLCHAIN="$gccprebuiltdir/$toolchaindir"
                  ARM_EABI_TOOLCHAIN_PATH=":$gccprebuiltdir/$toolchaindir"
@@ -576,10 +555,18 @@ function lunch()
 
     echo
 
+    if [[ $USE_PREBUILT_CHROMIUM -eq 1 ]]; then
+        chromium_prebuilt
+    else
+        # Unset flag in case user opts out later on
+        export PRODUCT_PREBUILT_WEBVIEWCHROMIUM=""
+    fi
+
     fixup_common_out_dir
 
     set_stuff_for_environment
     printconfig
+
 }
 
 # Tab completion for lunch.
@@ -1476,6 +1463,26 @@ function pez {
         echo -e "\e[0;32mSUCCESS\e[00m"
     fi
     return $retval
+}
+
+function chromium_prebuilt() {
+    T=$(gettop)
+    export TARGET_DEVICE=$(get_build_var TARGET_DEVICE)
+    hash=$T/prebuilts/chromium/$TARGET_DEVICE/hash.txt
+    libsCheck=$T/prebuilts/chromium/$TARGET_DEVICE/lib/libwebviewchromium.so
+    frameworksCheck=$T/prebuilts/chromium/$TARGET_DEVICE/framework/webview/paks
+    device_target=$T/prebuilts/chromium/$TARGET_DEVICE/
+
+    if [ -r $hash ] && [ $(git --git-dir=$T/external/chromium/.git --work-tree=$T/external/chromium rev-parse --verify HEAD) == $(cat $hash) ] && [ -f $libsCheck ] && [ -d $frameworksCheck ]; then
+        export PRODUCT_PREBUILT_WEBVIEWCHROMIUM=yes
+        echo "** Prebuilt Chromium is up-to-date; Will be used for build **"
+    else
+        export PRODUCT_PREBUILT_WEBVIEWCHROMIUM=no
+        rm -rfv $device_target
+        echo ""
+        echo "** Prebuilt Chromium out-of-date/not found; Will build from source **"
+        echo ""
+    fi
 }
 
 if [ "x$SHELL" != "x/bin/bash" ]; then

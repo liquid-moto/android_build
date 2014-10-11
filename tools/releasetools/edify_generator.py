@@ -155,9 +155,13 @@ class EdifyGenerator(object):
     fstab = self.info.get("fstab", None)
     if fstab:
       p = fstab[mount_point]
-      self.script.append('mount("%s", "%s", "%s", "%s");' %
-                         (p.fs_type, common.PARTITION_TYPES[p.fs_type],
-                          p.device, p.mount_point))
+      if p.fs_type == 'f2fs':
+        self.script.append('run_program("/sbin/busybox", "mount", "%s");' %
+                           (p.mount_point))
+      else:
+        self.script.append('mount("%s", "%s", "%s", "%s");' %
+                           (p.fs_type, common.PARTITION_TYPES[p.fs_type],
+                            p.device, p.mount_point))
       self.mounts.add(p.mount_point)
 
   def Unmount(self, mount_point):
@@ -190,9 +194,13 @@ class EdifyGenerator(object):
     fstab = self.info.get("fstab", None)
     if fstab:
       p = fstab[partition]
-      self.script.append('format("%s", "%s", "%s", "%s", "%s");' %
-                         (p.fs_type, common.PARTITION_TYPES[p.fs_type],
-                          p.device, p.length, p.mount_point))
+      if p.fs_type == 'f2fs':
+        self.script.append('run_program("/sbin/mkfs.f2fs", "%s");' %
+                           (p.device))
+      else:
+        self.script.append('format("%s", "%s", "%s", "%s", "%s");' %
+                           (p.fs_type, common.PARTITION_TYPES[p.fs_type],
+                            p.device, p.length, p.mount_point))
 
   def DeleteFiles(self, file_list):
     """Delete all files in file_list."""
@@ -204,6 +212,15 @@ class EdifyGenerator(object):
     """Moves a file from one location to another."""
     if self.info.get("update_rename_support", False):
       self.script.append('rename("%s", "%s");' % (srcfile, tgtfile))
+    else:
+      raise ValueError("Rename not supported by update binary")
+
+  def SkipNextActionIfTargetExists(self, tgtfile, tgtsha1):
+    """Prepend an action with an apply_patch_check in order to
+       skip the action if the file exists.  Used when a patch
+       is later renamed."""
+    cmd = ('sha1_check(read_file("%s"), %s) || ' % (tgtfile, tgtsha1))
+    self.script.append(self._WordWrap(cmd))
 
   def ApplyPatch(self, srcfile, tgtfile, tgtsize, tgtsha1, *patchpairs):
     """Apply binary patches (in *patchpairs) to the given srcfile to

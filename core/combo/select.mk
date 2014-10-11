@@ -46,9 +46,22 @@ $(combo_target)HAVE_STRLCPY := 0
 $(combo_target)HAVE_STRLCAT := 0
 $(combo_target)HAVE_KERNEL_MODULES := 0
 
-$(combo_target)GLOBAL_CFLAGS := -fno-exceptions -Wno-multichar
-$(combo_target)RELEASE_CFLAGS := -O2 -g -fno-strict-aliasing
+#$(combo_target)GLOBAL_CFLAGS := -fno-exceptions -Wno-multichar
+#$(combo_target)RELEASE_CFLAGS := -O2 -g -fno-strict-aliasing
+
+ifeq ($(USE_ARCH_OPTIMIZATIONS),true)
+$(combo_target)GLOBAL_CFLAGS := -O3 -DNDEBUG -funsafe-loop-optimizations -fivopts -ftree-loop-im -ftree-loop-ivcanon -ffunction-sections -fdata-sections -funswitch-loops -frename-registers -frerun-cse-after-loop -fomit-frame-pointer -fgcse-sm -fgcse-las -fweb -ftracer -Wno-error=unused-parameter -Wno-error=unused-but-set-variable -Wno-error=maybe-uninitialized -fno-exceptions -Wno-multichar
+$(combo_target)RELEASE_CFLAGS := -O3 -DNDEBUG -fno-strict-aliasing -funsafe-loop-optimizations -fivopts -ftree-loop-im -ftree-loop-ivcanon -ffunction-sections -fdata-sections -funswitch-loops -frename-registers -frerun-cse-after-loop -fomit-frame-pointer -fgcse-sm -fgcse-las -fweb -ftracer -Wno-error=unused-parameter -Wno-error=unused-but-set-variable -Wno-error=maybe-uninitialized
+$(combo_target)GLOBAL_LDFLAGS := -Wl,-O1 -Wl,--as-needed -Wl,--relax -Wl,--sort-common -Wl,--gc-sections
+else
+$(combo_target)GLOBAL_CFLAGS := -fstrict-aliasing -Wstrict-aliasing=3 -Werror=strict-aliasing -fno-exceptions -Wno-multichar -Wno-error=unused-parameter -Wno-error=unused-but-set-variable
+$(combo_target)RELEASE_CFLAGS := -O3 -g -fstrict-aliasing -Wstrict-aliasing=3 -Werror=strict-aliasing -fno-tree-vectorize -fno-inline-functions -fno-unswitch-loops -fgcse-after-reload -fno-ipa-cp-clone -fno-vect-cost-model -Wno-error=unused-parameter -Wno-error=unused-but-set-variable
+ifeq ($(OPTIMIZE_LINKER),yes)
+$(combo_target)GLOBAL_LDFLAGS := -Wl,-O1 -Wl,--as-needed -Wl,--relax -Wl,--sort-common -Wl,--gc-sections
+else
 $(combo_target)GLOBAL_LDFLAGS :=
+endif
+endif
 $(combo_target)GLOBAL_ARFLAGS := crsP
 
 # Turn off strict-aliasing if we're building an AOSP variant without the
@@ -81,7 +94,9 @@ ifneq ($(USE_CCACHE),)
   # We don't really use system headers much so the rootdir is
   # fine; ensures these paths are relative for all Android trees
   # on a workstation.
-  export CCACHE_BASEDIR := /
+  ifeq ($(CCACHE_BASEDIR),)
+    export CCACHE_BASEDIR := $(ANDROID_BUILD_TOP)
+  endif
 
   # It has been shown that ccache 3.x using direct mode can be several times
   # faster than using the current ccache 2.4 that is used by default

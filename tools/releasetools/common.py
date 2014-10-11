@@ -500,6 +500,7 @@ def CheckSize(data, target, info_dict):
   mount_point = "/" + target
 
   if info_dict["fstab"]:
+    if mount_point == "/userdata_extra": mount_point = "/data"
     if mount_point == "/userdata": mount_point = "/data"
     p = info_dict["fstab"][mount_point]
     fs_type = p.fs_type
@@ -840,12 +841,6 @@ class DeviceSpecificParams(object):
     this is used to install the image for the device's baseband
     processor."""
     return self._DoCall("IncrementalOTA_InstallEnd")
-
-  def IncrementalOTA_DisableRecoveryUpdate(self):
-    """Called to check if the UpdateRecovery step should be skipped,
-    which is useful if the device has a "locked" bootloader (where
-    the recovery cannot be overwritten)."""
-    return self._DoCall("IncrementalOTA_DisableRecoveryUpdate", [ None ], default=False)
 
 class File(object):
   def __init__(self, name, data):

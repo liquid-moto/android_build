@@ -23,7 +23,7 @@ PRODUCT_PACKAGES := \
 	Email \
 	Exchange2 \
 	FusedLocation \
-	Gallery \
+	Gallery2 \
 	Keyguard \
 	Apollo \
 	Mms \
@@ -57,7 +57,8 @@ PRODUCT_PACKAGES := \
 	CalendarProvider \
 	SmokeTest \
 	SmokeTestApp \
-	rild
+	rild \
+	Dialer
 
 # Define the host tools and libs that are parts of the SDK.
 -include sdk/build/product_sdk.mk
