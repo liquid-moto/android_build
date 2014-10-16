@@ -125,12 +125,12 @@ ifeq ($(USE_ARCH_OPTIMIZATIONS),true)
 TARGET_thumb_CFLAGS :=  -mthumb \
                         -Os \
                         -fomit-frame-pointer \
-                        -fstrict-aliasing \
+                        -fno-strict-aliasing \
                         -fno-tree-vectorize \
                         -fno-inline-functions \
                         -fno-unswitch-loops \
-                        -Wstrict-aliasing=3 \
-                        -Werror=strict-aliasing \
+                        #-Wstrict-aliasing=3 \
+                        #-Werror=strict-aliasing \
                         -fgcse-after-reload \
                         -fno-ipa-cp-clone \
                         -fno-vect-cost-model \
@@ -156,12 +156,12 @@ else
 TARGET_thumb_CFLAGS :=  -mthumb \
                         -Os \
                         -fomit-frame-pointer \
-                        -fstrict-aliasing \
+                        -fno-strict-aliasing \
                         -fno-tree-vectorize \
                         -fno-inline-functions \
                         -fno-unswitch-loops \
-                        -Wstrict-aliasing=3 \
-                        -Werror=strict-aliasing \
+                        #-Wstrict-aliasing=3 \
+                        #-Werror=strict-aliasing \
                         -fgcse-after-reload \
                         -fno-ipa-cp-clone \
                         -fno-vect-cost-model \
