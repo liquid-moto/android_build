@@ -220,7 +220,7 @@ $(INSTALLED_BUILD_PROP_TARGET): $(BUILDINFO_SH) $(INTERNAL_BUILD_ID_MAKEFILE) $(
 		        echo "#" >> $@; )
 	$(hide) $(foreach line,$(ADDITIONAL_BUILD_PROPERTIES), \
 		echo "$(line)" >> $@;)
-	$(hide) build/tools/post_process_props.py $@
+	$(hide) build/tools/post_process_props.py $@ "$(PRODUCT_PROPERTY_UBER_OVERRIDES)"
 
 build_desc :=
 
@@ -655,7 +655,7 @@ else
 ifeq ($(BOARD_USES_RECOVERY_CHARGEMODE),true)
   $(error BOARD_USES_RECOVERY_CHARGEMODE is deprecated. Please see http://bit.ly/opcSJZ on how to properly implement chargemode in recovery. Or just remove the BOARD_USES_RECOVERY_CHARGEMODE if you are lazy. I will hate you though. -Koush)
 else
-  recovery_initrc := $(call project-path-for,recovery)/etc/init.rc
+  recovery_initrc := $(call include-path-for, recovery)/etc/init.rc
 endif
 endif
 ifneq ($(TARGET_PREBUILT_RECOVERY_KERNEL),)
@@ -667,7 +667,7 @@ recovery_uncompressed_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.cpio
 recovery_ramdisk := $(PRODUCT_OUT)/ramdisk-recovery.img
 recovery_build_prop := $(INSTALLED_BUILD_PROP_TARGET)
 recovery_binary := $(call intermediates-dir-for,EXECUTABLES,recovery)/recovery
-recovery_resources_common := $(call project-path-for,recovery)/res
+recovery_resources_common := $(call include-path-for, recovery)/res
 recovery_resources_private := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery/res))
 recovery_root_private := $(strip $(wildcard $(TARGET_DEVICE_DIR)/recovery/root))
 recovery_resource_deps := $(shell find $(recovery_resources_common) \
@@ -1280,6 +1280,9 @@ $(BUILT_TARGET_FILES_PACKAGE): \
 ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/RECOVERY/kernel
 endif
+ifdef INSTALLED_DTIMAGE_TARGET
+	$(hide) $(ACP) $(INSTALLED_DTIMAGE_TARGET) $(zip_root)/RECOVERY/dt
+endif
 ifdef INSTALLED_2NDBOOTLOADER_TARGET
 	$(hide) $(ACP) \
 		$(INSTALLED_2NDBOOTLOADER_TARGET) $(zip_root)/RECOVERY/second
@@ -1299,6 +1302,9 @@ endif
 		$(TARGET_ROOT_OUT),$(zip_root)/BOOT/RAMDISK)
 ifdef INSTALLED_KERNEL_TARGET
 	$(hide) $(ACP) $(INSTALLED_KERNEL_TARGET) $(zip_root)/BOOT/kernel
+endif
+ifdef INSTALLED_DTIMAGE_TARGET
+	$(hide) $(ACP) $(INSTALLED_DTIMAGE_TARGET) $(zip_root)/BOOT/dt
 endif
 ifdef INSTALLED_RAMDISK_TARGET
 	$(hide) $(ACP) $(INSTALLED_RAMDISK_TARGET) $(zip_root)/BOOT/ramdisk.img
@@ -1332,6 +1338,12 @@ endif
 	@# Contents of the data image
 	$(hide) $(call package_files-copy-root, \
 		$(TARGET_OUT_DATA),$(zip_root)/DATA)
+ifdef BOARD_CUSTOM_BOOTIMG_MK
+	@# Prebuilt boot images
+	$(hide) mkdir -p $(zip_root)/BOOTABLE_IMAGES
+	$(hide) $(ACP) $(INSTALLED_BOOTIMAGE_TARGET) $(zip_root)/BOOTABLE_IMAGES/
+	$(hide) $(ACP) $(INSTALLED_RECOVERYIMAGE_TARGET) $(zip_root)/BOOTABLE_IMAGES/
+endif
 ifdef BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE
 	@# Contents of the vendor image
 	$(hide) $(call package_files-copy-root, \
@@ -1424,6 +1436,10 @@ else
     $(INTERNAL_OTA_PACKAGE_TARGET): backuptool := false
 endif
 
+ifneq ($(TARGET_NO_SEPARATE_RECOVERY),)
+    $(INTERNAL_OTA_PACKAGE_TARGET): separate_recovery := --no_separate_recovery=true
+endif
+
 BOOT_ZIP_FROM_IMAGE_SCRIPT := ./build/tools/releasetools/boot_flash_from_image
 KERNEL_PATH := $(TARGET_KERNEL_SOURCE)/arch/arm/configs/$(TARGET_KERNEL_CONFIG)
 
@@ -1437,6 +1453,7 @@ $(INTERNAL_OTA_PACKAGE_TARGET): $(BUILT_TARGET_FILES_PACKAGE) $(DISTTOOLS)
 	   --backup=$(backuptool) \
 	   --override_device=$(override_device) \
 	   --override_prop=$(override_prop) \
+	   $(separate_recovery) \
 	   $(BUILT_TARGET_FILES_PACKAGE) $@
 
 .PHONY: otapackage liquid bootzip
