@@ -168,7 +168,7 @@ board_config_mk :=
 
 # General entries for project pathmap.  Any entries listed here should
 # be device and hardware independent.
-#$(call project-set-path-variant,recovery,RECOVERY_VARIANT,bootable/recovery)
+$(call project-set-path-variant,recovery,RECOVERY_VARIANT,bootable/recovery)
 
 ## Rebuild the pathmap if there's a recovery variant. Its path probably changed
 ifneq ($(RECOVERY_VARIANT),)
