@@ -531,23 +531,23 @@ else if get_stage("%(bcb_dev)s", "stage") == "3/3" then
   if OPTIONS.wipe_user_data:
     script.FormatPartition("/data")
 
-  script.Print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-  script.Print("     \ )        (          )\ ) )\ )          ")
-  script.Print("     (()/  (   ( )\     (  (()/((()/(         ")
-  script.Print("     (_)) ((_) (_)_)   /((_)(_)) (_))         ")
-  script.Print("     | |   (_) / _ \ (_))( |_ _| |   \        ")
-  script.Print("     | |__ | || (_) || || | | |  | |) |       ")
-  script.Print("     |____||_| \__\_\ \_,_||___| |___/        ")	  	
-  script.Print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
-  script.Print("          <%%% Liquid-Kitkat %%%>             ")
-  script.Print("         <%%% By LiquidSmooth %%%>            ")
-  script.Print("=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-")
+  script.Print("           __                        __        ")
+  script.Print("          / /   __ ___  __  __ _ ___/ /        ")
+  script.Print("         / /   / / __ '/ / / / / __  /         ")
+  script.Print("        / /___/ / /_/ / /_/ / / /_/ /          ")
+  script.Print("       /_____/_/\__, /\__,_/_/\__,_/           ")
+  script.Print("          __ __   /_/   __ __                  ")
+  script.Print("         / // / __ ____/ // /____  _____       ")
+  script.Print("        /  " / / /_  _/  " // __ '/_  _/       ")
+  script.Print("       / /| | / / / // /| |/ /_/ / / /         ")
+  script.Print("      /_/ |_|/_/ /_//_/ |_|\__,_/ /_/          ")
+  script.Print(" ")
   script.Print("Removing System and Preinstall...")
 
   if "selinux_fc" in OPTIONS.info_dict:
     WritePolicyConfig(OPTIONS.info_dict["selinux_fc"], output_zip)
 
-  script.ShowProgress(0.05, 5)
+  script.ShowProgress(0.02, 2)
   if not device_specific.FullOTA_FormatSystemPartition():
     script.FormatPartition("/system")
 
@@ -557,13 +557,14 @@ else if get_stage("%(bcb_dev)s", "stage") == "3/3" then
   script.Mount("/system")
   script.AppendExtra('run_program("/sbin/busybox", "mkdir /system/lib");')
   script.AppendExtra('mount("ext3", "EMMC", "/dev/block/mmcblk1p23", "/system/lib");')
-  script.ShowProgress(0.75, 75)
+  script.ShowProgress(0.78, 105)
   script.Print("Installing System...")
 
   if not OPTIONS.no_separate_recovery:
     script.UnpackPackageDir("recovery", "/system")
   script.UnpackPackageDir("system", "/system")
 
+  script.ShowProgress(0.1, 10)
   script.Print("Creating Symlinks...") 
   symlinks = CopySystemFiles(input_zip, output_zip)
   script.MakeSymlinks(symlinks)
@@ -581,19 +582,16 @@ else if get_stage("%(bcb_dev)s", "stage") == "3/3" then
   else:
     common.CheckSize(boot_img.data, "boot.img", OPTIONS.info_dict)
     common.ZipWriteStr(output_zip, "boot.img", boot_img.data)
-  script.ShowProgress(0.2, 0)
 
   if OPTIONS.backuptool:
     script.ShowProgress(0.2, 10)
     script.RunBackup("restore")
 
-  script.ShowProgress(0.2, 10)
-
   if not device_specific.FullOTA_DisableBootImageInstallation():
     script.Print("Flashing Boot Image...")
     script.WriteRawImage("/boot", "boot.img")
 
-  script.ShowProgress(0.1, 0)
+  script.ShowProgress(0.1, 10)
   script.Print("Installation Completed!")
   device_specific.FullOTA_InstallEnd()
 
